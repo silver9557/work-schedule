@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>График работы</title>
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/locales/ru.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 10px;
+            background-color: #f9f9f9;
+        }
+
+        #calendar {
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto;
+            font-size: 14px;
+        }
+
+        .fc-header-toolbar {
+            padding: 5px;
+            font-size: 14px;
+        }
+
+        .fc-daygrid-day {
+            height: 30px;
+        }
+
+        .working-day-admin {
+            background-color: #a5d6a7 !important; /* Зеленый цвет для администраторов */
+        }
+
+        .working-day-manager {
+            background-color: #90caf9 !important; /* Голубой цвет для менеджеров */
+        }
+
+        .fc-day-today {
+            font-size: 16px; /* Увеличиваем размер шрифта для текущего дня */
+            font-weight: bold; /* Жирный шрифт для текущего дня */
+        }
+
+        #controls {
+            width: 100%;
+            max-width: 400px;
+            margin: 10px auto;
+            text-align: center;
+        }
+
+        #controls button {
+            font-size: 14px;
+            padding: 10px;
+            margin: 5px;
+            width: 100%;
+            max-width: 180px;
+            box-sizing: border-box;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #controls button:hover {
+            background-color: #0056b3;
+        }
+
+        #hint {
+            display: none; /* Скрываем подсказку по умолчанию */
+            margin-top: 10px;
+            font-size: 12px;
+            color: #555;
+        }
+
+        h3 {
+            font-size: 16px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="controls">
+        <h3>Администраторы</h3>
+        <button onclick="buildDmitrySchedule()">График Дмитрия</button>
+        <button onclick="buildKonstantinSchedule()">График Константина</button>
+
+        <h3>Менеджеры</h3>
+        <button onclick="buildIvanSchedule()">Смена Ивана</button>
+        <button onclick="buildEvgenySchedule()">Смена Евгения</button>
+
+        <h3>Управление</h3>
+        <button onclick="resetCalendar()">Сброс</button>
+        <div id="hint">Первая рабочая смена Дмитрия в феврале 03.02, Константина - 10.02, Ивана - 02.02, Евгения - 04.02</div>
+    </div>
+    <div id="calendar"></div>
+
+    <script>
+        let calendar;
+        let adminSchedule = []; // График администратора
+        let managerSchedule = []; // График менеджера
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const calendarEl = document.getElementById('calendar');
+            calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                locale: 'ru',
+                headerToolbar: {
+                    left: 'prev',
+                    center: 'title',
+                    right: 'next'
+                },
+                height: 'auto',
+                contentHeight: 300,
+                events: []
+            });
+            calendar.render();
+        });
+
+        // Функция для построения графика администратора
+        function buildAdminSchedule(startDate, className) {
+            const events = [];
+            let currentDate = new Date(startDate);
+            let cycle = [1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0]; // 2-2-3-2-2-3
+            let cycleIndex = 0;
+
+            // Генерация событий на 12 месяцев вперед
+            for (let i = 0; i < 365; i++) {
+                if (cycle[cycleIndex] === 1) { // Если рабочий день
+                    events.push({
+                        title: 'Админ',
+                        start: currentDate.toISOString().split('T')[0],
+                        className: className
+                    });
+                }
+
+                // Переход к следующему дню цикла
+                cycleIndex = (cycleIndex + 1) % cycle.length;
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+
+            return events;
+        }
+
+        // Функция для построения графика менеджера
+        function buildManagerSchedule(startDate, className) {
+            const events = [];
+            let currentDate = new Date(startDate);
+            let cycle = [1, 1, 0, 0]; // 2-2
+            let cycleIndex = 0;
+
+            // Генерация событий на 12 месяцев вперед
+            for (let i = 0; i < 365; i++) {
+                if (cycle[cycleIndex] === 1) { // Если рабочий день
+                    events.push({
+                        title: 'Менеджер',
+                        start: currentDate.toISOString().split('T')[0],
+                        className: className
+                    });
+                }
+
+                // Переход к следующему дню цикла
+                cycleIndex = (cycleIndex + 1) % cycle.length;
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+
+            return events;
+        }
+
+        // График Дмитрия
+        function buildDmitrySchedule() {
+            adminSchedule = buildAdminSchedule('2025-02-03', 'working-day-admin');
+            updateCalendar();
+        }
+
+        // График Константина
+        function buildKonstantinSchedule() {
+            adminSchedule = buildAdminSchedule('2025-02-10', 'working-day-admin');
+            updateCalendar();
+        }
+
+        // График Ивана
+        function buildIvanSchedule() {
+            managerSchedule = buildManagerSchedule('2025-02-02', 'working-day-manager');
+            updateCalendar();
+        }
+
+        // График Евгения
+        function buildEvgenySchedule() {
+            managerSchedule = buildManagerSchedule('2025-02-04', 'working-day-manager');
+            updateCalendar();
+        }
+
+        // Сброс календаря
+        function resetCalendar() {
+            adminSchedule = [];
+            managerSchedule = [];
+            updateCalendar();
+        }
+
+        // Обновить календарь
+        function updateCalendar() {
+            const combinedEvents = [...adminSchedule, ...managerSchedule];
+            calendar.removeAllEvents();
+            calendar.addEventSource(combinedEvents);
+            calendar.refetchEvents();
+        }
+
+        // Показать/скрыть подсказку
+        function showHint() {
+            const hint = document.getElementById('hint');
+            if (hint.style.display === 'none') {
+                hint.style.display = 'block'; // Показываем подсказку
+            } else {
+                hint.style.display = 'none'; // Скрываем подсказку
+            }
+        }
+    </script>
+</body>
+</html>
