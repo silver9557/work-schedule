@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>График работы магазина</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f5f5f5;
+            padding: 20px;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        body.dark-theme {
+            background-color: #121212;
+            color: #ffffff;
+        }
+        .calendar {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            max-width: 400px;
+            width: 100%;
+            animation: fadeIn 0.5s ease-in-out;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .dark-theme .calendar {
+            background: #1e1e1e;
+            color: #ffffff;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .month-navigation {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .month-navigation button {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .month-navigation button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+        .month-navigation h2 {
+            margin: 0;
+            font-size: 20px;
+            color: #333;
+            transition: color 0.3s;
+        }
+        .dark-theme .month-navigation h2 {
+            color: #ffffff;
+        }
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            margin-bottom: 20px;
+        }
+        .calendar-grid div {
+            padding: 10px;
+            text-align: center;
+            border-radius: 10px;
+            background-color: #f9f9f9;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s, opacity 0.3s;
+            position: relative;
+        }
+        .dark-theme .calendar-grid div {
+            background-color: #2c2c2c;
+            color: #ffffff;
+        }
+        .calendar-grid div:hover {
+            background-color: #e0e0e0;
+            transform: scale(1.05);
+        }
+        .dark-theme .calendar-grid div:hover {
+            background-color: #444;
+        }
+        .calendar-grid div.today {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            font-weight: bold;
+            animation: pulse 1.5s infinite;
+        }
+        .calendar-grid div.weekend {
+            background-color: #ffcccc;
+            color: #333;
+        }
+        .dark-theme .calendar-grid div.weekend {
+            background-color: #ff6666;
+            color: #ffffff;
+        }
+        .calendar-grid div.working-day {
+            background: linear-gradient(135deg, #ffeb3b, #fdd835);
+            color: #333;
+        }
+        .dark-theme .calendar-grid div.working-day {
+            background: linear-gradient(135deg, #ffcc00, #ffa500);
+            color: #333;
+        }
+        .calendar-grid div.selected-day {
+            background: linear-gradient(135deg, #FF9800, #F57C00);
+            color: white;
+            font-weight: bold;
+            animation: select 0.3s ease-in-out;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        @keyframes select {
+            from { transform: scale(1); }
+            to { transform: scale(1.1); }
+        }
+        .employee-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .employee-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .employee-group h3 {
+            margin: 0 0 5px 0;
+            font-size: 16px;
+            color: #333;
+            animation: slideIn 0.5s ease-in-out;
+            transition: color 0.3s;
+        }
+        .dark-theme .employee-group h3 {
+            color: #ffffff;
+        }
+        .employee-buttons button {
+            padding: 10px 15px;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+            text-align: left;
+            animation: fadeIn 0.5s ease-in-out;
+            background: linear-gradient(135deg, #008CBA, #007B9E);
+        }
+        .employee-buttons button.manager {
+            background: linear-gradient(135deg, #008CBA, #007B9E);
+        }
+        .employee-buttons button.admin {
+            background: linear-gradient(135deg, #9C27B0, #7B1FA2);
+        }
+        .employee-buttons button:hover {
+            opacity: 0.9;
+            transform: scale(1.05);
+        }
+        .employee-buttons button span.info {
+            margin-left: 10px;
+            font-size: 12px;
+            color: #888;
+        }
+        .dark-theme .employee-buttons button span.info {
+            color: #ccc;
+        }
+        .reset-button {
+            background: linear-gradient(135deg, #f44336, #e53935);
+            margin-top: 10px;
+        }
+        .reset-button:hover {
+            background: linear-gradient(135deg, #e53935, #d32f2f);
+        }
+        .working-employees {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 10px;
+            animation: fadeIn 0.5s ease-in-out;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .dark-theme .working-employees {
+            background-color: #2c2c2c;
+            color: #ffffff;
+        }
+        .working-employees h3 {
+            margin: 0 0 10px 0;
+            font-size: 18px;
+            color: #333;
+            transition: color 0.3s;
+        }
+        .dark-theme .working-employees h3 {
+            color: #ffffff;
+        }
+        .working-employees ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .working-employees li {
+            padding: 5px 0;
+            color: #555;
+            animation: fadeIn 0.5s ease-in-out;
+            transition: color 0.3s;
+        }
+        .dark-theme .working-employees li {
+            color: #cccccc;
+        }
+        .notes {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #e0f7fa;
+            border-radius: 10px;
+            font-size: 14px;
+            color: #333;
+            animation: fadeIn 0.5s ease-in-out;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .dark-theme .notes {
+            background-color: #004d40;
+            color: #ffffff;
+        }
+        .date-picker {
+            margin-bottom: 20px;
+        }
+        .date-picker input {
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+            width: 100%;
+            box-sizing: border-box;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .dark-theme .date-picker input {
+            background-color: #2c2c2c;
+            color: #ffffff;
+            border-color: #444;
+        }
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .theme-toggle:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <button class="theme-toggle" id="themeToggle">🌙</button>
+    <div class="calendar">
+        <div class="date-picker">
+            <input type="date" id="datePicker" min="2025-02-01" max="2028-02-01">
+        </div>
+        <div class="month-navigation">
+            <button id="prevMonth">◄</button>
+            <h2 id="currentMonth"></h2>
+            <button id="nextMonth">►</button>
+        </div>
+        <div class="calendar-grid" id="calendarGrid"></div>
+        <div class="employee-buttons">
+            <div class="employee-group">
+                <h3>Администраторы:</h3>
+                <button class="admin" data-employee="Константин">Константин (Админ)</button>
+                <button class="admin" data-employee="Дмитрий">Дмитрий (Админ)</button>
+            </div>
+            <div class="employee-group">
+                <h3>Смена Ивана:</h3>
+                <button class="manager" data-employee="Иван">Иван</button>
+                <button class="manager" data-employee="Николай">Николай</button>
+                <button class="manager" data-employee="Андрей">Андрей</button>
+            </div>
+            <div class="employee-group">
+                <h3>Смена Евгения:</h3>
+                <button class="manager" data-employee="Евгений">Евгений</button>
+                <button class="manager" data-employee="Александр">Александр</button>
+                <button class="manager" data-employee="Илья">Илья</button>
+            </div>
+            <button class="reset-button">Сбросить</button>
+        </div>
+        <div class="working-employees">
+            <h3 id="workingTitle">Работают сегодня:</h3>
+            <ul id="workingToday"></ul>
+        </div>
+        <div class="notes">
+            <p><strong>Примечание:</strong> Петрович работает по будням с 09:00 до 18:00.</p>
+        </div>
+    </div>
+
+    <script>
+        const adminSchedule = [1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0];
+        const managerSchedule = [1, 1, 0, 0];
+
+        const employees = {
+            "Константин": { type: "admin", startDate: new Date(2025, 1, 10) },
+            "Дмитрий": { type: "admin", startDate: new Date(2025, 1, 3) },
+            "Иван": { type: "manager", startDate: new Date(2025, 1, 2) },
+            "Николай": { type: "manager", startDate: new Date(2025, 1, 2) },
+            "Андрей": { type: "manager", startDate: new Date(2025, 1, 2) },
+            "Евгений": { type: "manager", startDate: new Date(2025, 1, 4) },
+            "Александр": { type: "manager", startDate: new Date(2025, 1, 4) },
+            "Илья": { type: "manager", startDate: new Date(2025, 1, 4) }
+        };
+
+        let currentDate = new Date();
+        let selectedEmployee = null;
+        let selectedDayElement = null;
+        let selectedDate = new Date();
+
+        // Функция для определения времени суток
+        function isNightTime() {
+            const now = new Date();
+            const hours = now.getHours();
+            return hours >= 18 || hours < 6; // Темная тема с 18:00 до 6:00
+        }
+
+        // Применение темы при загрузке страницы
+        function applyTheme() {
+            if (isNightTime()) {
+                document.body.classList.add('dark-theme');
+            } else {
+                document.body.classList.remove('dark-theme');
+            }
+        }
+
+        // Переключение темы вручную
+        document.getElementById('themeToggle').addEventListener('click', () => {
+            document.body.classList.toggle('dark-theme');
+        });
+
+        // Функция для подсчета смен и рабочих часов
+        function calculateShiftsAndHours(employeeName, date) {
+            const employee = employees[employeeName];
+            const schedule = employee.type === "admin" ? adminSchedule : managerSchedule;
+            const startDate = employee.startDate;
+            const currentMonth = date.getMonth();
+            const currentYear = date.getFullYear();
+            const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
+            const lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0);
+
+            let shifts = 0;
+            let currentDay = new Date(firstDayOfMonth);
+
+            while (currentDay <= lastDayOfMonth) {
+                const diff = Math.floor((currentDay - startDate) / (1000 * 60 * 60 * 24));
+                const index = diff % schedule.length;
+                if (schedule[index] === 1) {
+                    shifts++;
+                }
+                currentDay.setDate(currentDay.getDate() + 1);
+            }
+
+            const hours = shifts * 11; // Одна смена = 11 часов
+            return { shifts, hours };
+        }
+
+        // Обновление информации о сменах и часах
+        function updateEmployeeInfo(employeeName, date) {
+            const button = document.querySelector(`button[data-employee="${employeeName}"]`);
+            const info = calculateShiftsAndHours(employeeName, date);
+            const infoSpan = button.querySelector('span.info') || document.createElement('span');
+            infoSpan.className = 'info';
+            infoSpan.textContent = `Смен: ${info.shifts}, Часов: ${info.hours}`;
+            button.appendChild(infoSpan);
+        }
+
+        // Остальной код остается без изменений
+        function renderCalendar(date) {
+            const calendarGrid = document.getElementById('calendarGrid');
+            calendarGrid.innerHTML = '';
+
+            const month = date.getMonth();
+            const year = date.getFullYear();
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const daysInMonth = lastDay.getDate();
+            const startingDay = (firstDay.getDay() + 6) % 7;
+
+            document.getElementById('currentMonth').textContent = `${date.toLocaleString('ru', { month: 'long' })} ${year}`;
+
+            for (let i = 0; i < startingDay; i++) {
+                calendarGrid.appendChild(document.createElement('div'));
+            }
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayElement = document.createElement('div');
+                dayElement.textContent = day;
+                const currentDay = new Date(year, month, day);
+                if (isToday(currentDay)) {
+                    dayElement.classList.add('today');
+                } else if (isWorkingDay(currentDay)) {
+                    dayElement.classList.add('working-day');
+                }
+                if (currentDay.getDay() === 0 || currentDay.getDay() === 6) {
+                    dayElement.classList.add('weekend');
+                }
+                dayElement.addEventListener('click', () => {
+                    if (selectedDayElement) {
+                        selectedDayElement.classList.remove('selected-day');
+                    }
+                    dayElement.classList.add('selected-day');
+                    selectedDayElement = dayElement;
+                    selectedDate = currentDay;
+                    updateWorkingEmployees(currentDay);
+                });
+                calendarGrid.appendChild(dayElement);
+            }
+
+            if (isToday(date)) {
+                updateWorkingEmployees(new Date());
+            }
+        }
+
+        function isToday(date) {
+            const today = new Date();
+            return date.toDateString() === today.toDateString();
+        }
+
+        function isWorkingDay(date) {
+            if (selectedEmployee) {
+                const employee = employees[selectedEmployee];
+                const schedule = employee.type === "admin" ? adminSchedule : managerSchedule;
+                const diff = Math.floor((date - employee.startDate) / (1000 * 60 * 60 * 24));
+                const index = diff % schedule.length;
+                return schedule[index] === 1;
+            }
+            return false;
+        }
+
+        function updateWorkingEmployees(date) {
+            const workingToday = document.getElementById('workingToday');
+            const workingTitle = document.getElementById('workingTitle');
+            workingToday.innerHTML = '';
+
+            if (isToday(date)) {
+                workingTitle.textContent = 'Работают сегодня:';
+            } else {
+                workingTitle.textContent = `Работают ${date.toLocaleDateString('ru')}:`;
+            }
+
+            let hasWorkers = false;
+            for (const [name, data] of Object.entries(employees)) {
+                const schedule = data.type === "admin" ? adminSchedule : managerSchedule;
+                const diff = Math.floor((date - data.startDate) / (1000 * 60 * 60 * 24));
+                const index = diff % schedule.length;
+                if (schedule[index] === 1) {
+                    const li = document.createElement('li');
+                    li.textContent = name;
+                    workingToday.appendChild(li);
+                    hasWorkers = true;
+                }
+            }
+
+            const isWeekday = date.getDay() >= 1 && date.getDay() <= 5;
+            if (isWeekday) {
+                const li = document.createElement('li');
+                li.textContent = 'Петрович (09:00–18:00)';
+                workingToday.appendChild(li);
+                hasWorkers = true;
+            }
+
+            if (!hasWorkers) {
+                const li = document.createElement('li');
+                li.textContent = 'Никто не работает';
+                workingToday.appendChild(li);
+            }
+        }
+
+        document.getElementById('prevMonth').addEventListener('click', () => {
+            currentDate.setMonth(currentDate.getMonth() - 1);
+            if (currentDate < new Date(2025, 1, 1)) {
+                currentDate = new Date(2025, 1, 1);
+            }
+            renderCalendar(currentDate);
+            updateDatePicker(currentDate);
+        });
+
+        document.getElementById('nextMonth').addEventListener('click', () => {
+            currentDate.setMonth(currentDate.getMonth() + 1);
+            if (currentDate > new Date(2028, 1, 1)) {
+                currentDate = new Date(2028, 1, 1);
+            }
+            renderCalendar(currentDate);
+            updateDatePicker(currentDate);
+        });
+
+        document.querySelectorAll('.employee-buttons button').forEach(button => {
+            button.addEventListener('click', () => {
+                if (button.classList.contains('reset-button')) {
+                    selectedEmployee = null;
+                    currentDate = new Date();
+                    renderCalendar(currentDate);
+                    updateWorkingEmployees(new Date());
+                    updateDatePicker(currentDate);
+                } else {
+                    selectedEmployee = button.getAttribute('data-employee');
+                    renderCalendar(currentDate);
+                    updateEmployeeInfo(selectedEmployee, currentDate);
+                }
+            });
+        });
+
+        document.getElementById('datePicker').addEventListener('change', (event) => {
+            const selectedDate = new Date(event.target.value);
+            currentDate = selectedDate;
+            renderCalendar(currentDate);
+        });
+
+        function updateDatePicker(date) {
+            const datePicker = document.getElementById('datePicker');
+            const year = date.getFullYear();
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const day = date.getDate().toString().padStart(2, '0');
+            datePicker.value = `${year}-${month}-${day}`;
+        }
+
+        // Применяем тему при загрузке страницы
+        applyTheme();
+
+        renderCalendar(currentDate);
+        updateWorkingEmployees(new Date());
+        updateDatePicker(currentDate);
+    </script>
+</body>
+</html>
