@@ -174,10 +174,24 @@
             color: #333;
             animation: fadeIn 0.5s ease-in-out;
         }
+        .date-picker {
+            margin-bottom: 20px;
+        }
+        .date-picker input {
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+            width: 100%;
+            box-sizing: border-box;
+        }
     </style>
 </head>
 <body>
     <div class="calendar">
+        <div class="date-picker">
+            <input type="date" id="datePicker" min="2025-02-01" max="2028-02-01">
+        </div>
         <div class="month-navigation">
             <button id="prevMonth"><</button>
             <h2 id="currentMonth"></h2>
@@ -333,20 +347,30 @@
 
         document.getElementById('prevMonth').addEventListener('click', () => {
             currentDate.setMonth(currentDate.getMonth() - 1);
+            if (currentDate < new Date(2025, 1, 1)) {
+                currentDate = new Date(2025, 1, 1);
+            }
             renderCalendar(currentDate);
+            updateDatePicker(currentDate);
         });
 
         document.getElementById('nextMonth').addEventListener('click', () => {
             currentDate.setMonth(currentDate.getMonth() + 1);
+            if (currentDate > new Date(2028, 1, 1)) {
+                currentDate = new Date(2028, 1, 1);
+            }
             renderCalendar(currentDate);
+            updateDatePicker(currentDate);
         });
 
         document.querySelectorAll('.employee-buttons button').forEach(button => {
             button.addEventListener('click', () => {
                 if (button.classList.contains('reset-button')) {
                     selectedEmployee = null;
+                    currentDate = new Date();
                     renderCalendar(currentDate);
-                    updateWorkingEmployees(new Date()); // Показываем, кто работает сегодня
+                    updateWorkingEmployees(new Date());
+                    updateDatePicker(currentDate);
                 } else {
                     selectedEmployee = button.getAttribute('data-employee');
                     renderCalendar(currentDate);
@@ -354,8 +378,23 @@
             });
         });
 
+        document.getElementById('datePicker').addEventListener('change', (event) => {
+            const selectedDate = new Date(event.target.value);
+            currentDate = selectedDate;
+            renderCalendar(currentDate);
+        });
+
+        function updateDatePicker(date) {
+            const datePicker = document.getElementById('datePicker');
+            const year = date.getFullYear();
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const day = date.getDate().toString().padStart(2, '0');
+            datePicker.value = `${year}-${month}-${day}`;
+        }
+
         renderCalendar(currentDate);
         updateWorkingEmployees(new Date());
+        updateDatePicker(currentDate);
     </script>
 </body>
 </html>
