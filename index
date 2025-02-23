@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>График работы магазина</title>
+    <style>
+        /* Стили остаются такими же, как в предыдущем коде */
+        /* Добавляем только темную тему */
+        body.dark-theme {
+            background-color: #121212;
+            color: #ffffff;
+        }
+        .dark-theme .calendar {
+            background: #1e1e1e;
+            color: #ffffff;
+        }
+        .dark-theme .month-navigation h2 {
+            color: #ffffff;
+        }
+        .dark-theme .calendar-grid div {
+            background-color: #2c2c2c;
+            color: #ffffff;
+        }
+        .dark-theme .calendar-grid div:hover {
+            background-color: #444;
+        }
+        .dark-theme .calendar-grid div.weekend {
+            background-color: #ff6666;
+            color: #ffffff;
+        }
+        .dark-theme .calendar-grid div.working-day {
+            background: linear-gradient(135deg, #ffcc00, #ffa500);
+            color: #333;
+        }
+        .dark-theme .employee-group h3 {
+            color: #ffffff;
+        }
+        .dark-theme .working-employees {
+            background-color: #2c2c2c;
+            color: #ffffff;
+        }
+        .dark-theme .working-employees h3 {
+            color: #ffffff;
+        }
+        .dark-theme .working-employees li {
+            color: #cccccc;
+        }
+        .dark-theme .notes {
+            background-color: #004d40;
+            color: #ffffff;
+        }
+        .dark-theme .date-picker input {
+            background-color: #2c2c2c;
+            color: #ffffff;
+            border-color: #444;
+        }
+    </style>
+</head>
+<body>
+    <button class="theme-toggle" id="themeToggle">🌙</button>
+    <div class="calendar">
+        <div class="date-picker">
+            <input type="date" id="datePicker" min="2025-02-01" max="2028-02-01">
+        </div>
+        <div class="month-navigation">
+            <button id="prevMonth">◄</button>
+            <h2 id="currentMonth"></h2>
+            <button id="nextMonth">►</button>
+        </div>
+        <div class="calendar-grid" id="calendarGrid"></div>
+        <div class="employee-buttons">
+            <div class="employee-group">
+                <h3>Администраторы:</h3>
+                <button class="admin" data-employee="Константин">Константин (Админ)</button>
+                <button class="admin" data-employee="Дмитрий">Дмитрий (Админ)</button>
+            </div>
+            <div class="employee-group">
+                <h3>Смена Ивана:</h3>
+                <button class="manager" data-employee="Иван">Иван</button>
+                <button class="manager" data-employee="Николай">Николай</button>
+                <button class="manager" data-employee="Андрей">Андрей</button>
+            </div>
+            <div class="employee-group">
+                <h3>Смена Евгения:</h3>
+                <button class="manager" data-employee="Евгений">Евгений</button>
+                <button class="manager" data-employee="Александр">Александр</button>
+                <button class="manager" data-employee="Илья">Илья</button>
+            </div>
+            <button class="reset-button">Сбросить</button>
+        </div>
+        <div class="working-employees">
+            <h3 id="workingTitle">Работают сегодня:</h3>
+            <ul id="workingToday"></ul>
+        </div>
+        <div class="notes">
+            <p><strong>Примечание:</strong> Петрович работает по будням с 09:00 до 18:00.</p>
+        </div>
+    </div>
+
+    <script>
+        const adminSchedule = [1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0];
+        const managerSchedule = [1, 1, 0, 0];
+
+        const employees = {
+            "Константин": { type: "admin", startDate: new Date(2025, 1, 10) },
+            "Дмитрий": { type: "admin", startDate: new Date(2025, 1, 3) },
+            "Иван": { type: "manager", startDate: new Date(2025, 1, 2) },
+            "Николай": { type: "manager", startDate: new Date(2025, 1, 2) },
+            "Андрей": { type: "manager", startDate: new Date(2025, 1, 2) },
+            "Евгений": { type: "manager", startDate: new Date(2025, 1, 4) },
+            "Александр": { type: "manager", startDate: new Date(2025, 1, 4) },
+            "Илья": { type: "manager", startDate: new Date(2025, 1, 4) }
+        };
+
+        let currentDate = new Date();
+        let selectedEmployee = null;
+        let selectedDayElement = null;
+        let selectedDate = new Date();
+
+        // Функция для определения времени суток
+        function isNightTime() {
+            const now = new Date();
+            const hours = now.getHours();
+            return hours >= 18 || hours < 6; // Темная тема с 18:00 до 6:00
+        }
+
+        // Применение темы при загрузке страницы
+        function applyTheme() {
+            if (isNightTime()) {
+                document.body.classList.add('dark-theme');
+            } else {
+                document.body.classList.remove('dark-theme');
+            }
+        }
+
+        // Переключение темы вручную
+        document.getElementById('themeToggle').addEventListener('click', () => {
+            document.body.classList.toggle('dark-theme');
+        });
+
+        // Остальной код остается без изменений
+        function renderCalendar(date) {
+            const calendarGrid = document.getElementById('calendarGrid');
+            calendarGrid.innerHTML = '';
+
+            const month = date.getMonth();
+            const year = date.getFullYear();
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const daysInMonth = lastDay.getDate();
+            const startingDay = (firstDay.getDay() + 6) % 7;
+
+            document.getElementById('currentMonth').textContent = `${date.toLocaleString('ru', { month: 'long' })} ${year}`;
+
+            for (let i = 0; i < startingDay; i++) {
+                calendarGrid.appendChild(document.createElement('div'));
+            }
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayElement = document.createElement('div');
+                dayElement.textContent = day;
+                const currentDay = new Date(year, month, day);
+                if (isToday(currentDay)) {
+                    dayElement.classList.add('today');
+                } else if (isWorkingDay(currentDay)) {
+                    dayElement.classList.add('working-day');
+                }
+                if (currentDay.getDay() === 0 || currentDay.getDay() === 6) {
+                    dayElement.classList.add('weekend');
+                }
+                dayElement.addEventListener('click', () => {
+                    if (selectedDayElement) {
+                        selectedDayElement.classList.remove('selected-day');
+                    }
+                    dayElement.classList.add('selected-day');
+                    selectedDayElement = dayElement;
+                    selectedDate = currentDay;
+                    updateWorkingEmployees(currentDay);
+                });
+                calendarGrid.appendChild(dayElement);
+            }
+
+            if (isToday(date)) {
+                updateWorkingEmployees(new Date());
+            }
+        }
+
+        function isToday(date) {
+            const today = new Date();
+            return date.toDateString() === today.toDateString();
+        }
+
+        function isWorkingDay(date) {
+            if (selectedEmployee) {
+                const employee = employees[selectedEmployee];
+                const schedule = employee.type === "admin" ? adminSchedule : managerSchedule;
+                const diff = Math.floor((date - employee.startDate) / (1000 * 60 * 60 * 24));
+                const index = diff % schedule.length;
+                return schedule[index] === 1;
+            }
+            return false;
+        }
+
+        function updateWorkingEmployees(date) {
+            const workingToday = document.getElementById('workingToday');
+            const workingTitle = document.getElementById('workingTitle');
+            workingToday.innerHTML = '';
+
+            if (isToday(date)) {
+                workingTitle.textContent = 'Работают сегодня:';
+            } else {
+                workingTitle.textContent = `Работают ${date.toLocaleDateString('ru')}:`;
+            }
+
+            let hasWorkers = false;
+            for (const [name, data] of Object.entries(employees)) {
+                const schedule = data.type === "admin" ? adminSchedule : managerSchedule;
+                const diff = Math.floor((date - data.startDate) / (1000 * 60 * 60 * 24));
+                const index = diff % schedule.length;
+                if (schedule[index] === 1) {
+                    const li = document.createElement('li');
+                    li.textContent = name;
+                    workingToday.appendChild(li);
+                    hasWorkers = true;
+                }
+            }
+
+            const isWeekday = date.getDay() >= 1 && date.getDay() <= 5;
+            if (isWeekday) {
+                const li = document.createElement('li');
+                li.textContent = 'Петрович (09:00–18:00)';
+                workingToday.appendChild(li);
+                hasWorkers = true;
+            }
+
+            if (!hasWorkers) {
+                const li = document.createElement('li');
+                li.textContent = 'Никто не работает';
+                workingToday.appendChild(li);
+            }
+        }
+
+        document.getElementById('prevMonth').addEventListener('click', () => {
+            currentDate.setMonth(currentDate.getMonth() - 1);
+            if (currentDate < new Date(2025, 1, 1)) {
+                currentDate = new Date(2025, 1, 1);
+            }
+            renderCalendar(currentDate);
+            updateDatePicker(currentDate);
+        });
+
+        document.getElementById('nextMonth').addEventListener('click', () => {
+            currentDate.setMonth(currentDate.getMonth() + 1);
+            if (currentDate > new Date(2028, 1, 1)) {
+                currentDate = new Date(2028, 1, 1);
+            }
+            renderCalendar(currentDate);
+            updateDatePicker(currentDate);
+        });
+
+        document.querySelectorAll('.employee-buttons button').forEach(button => {
+            button.addEventListener('click', () => {
+                if (button.classList.contains('reset-button')) {
+                    selectedEmployee = null;
+                    currentDate = new Date();
+                    renderCalendar(currentDate);
+                    updateWorkingEmployees(new Date());
+                    updateDatePicker(currentDate);
+                } else {
+                    selectedEmployee = button.getAttribute('data-employee');
+                    renderCalendar(currentDate);
+                }
+            });
+        });
+
+        document.getElementById('datePicker').addEventListener('change', (event) => {
+            const selectedDate = new Date(event.target.value);
+            currentDate = selectedDate;
+            renderCalendar(currentDate);
+        });
+
+        function updateDatePicker(date) {
+            const datePicker = document.getElementById('datePicker');
+            const year = date.getFullYear();
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const day = date.getDate().toString().padStart(2, '0');
+            datePicker.value = `${year}-${month}-${day}`;
+        }
+
+        // Применяем тему при загрузке страницы
+        applyTheme();
+
+        renderCalendar(currentDate);
+        updateWorkingEmployees(new Date());
+        updateDatePicker(currentDate);
+    </script>
+</body>
+</html>
